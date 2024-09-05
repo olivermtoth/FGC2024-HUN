@@ -58,50 +58,10 @@ public class LinearMotionTest extends LinearOpMode {
             while (opModeIsActive()) {
                 // ====== DRIVE CONTROL =====
 
-                // stick inputs
                 leftX = gamepad1.left_stick_x;
                 leftY = gamepad1.left_stick_y;
                 rightX = gamepad1.right_stick_x;
                 rightY = gamepad1.right_stick_y;
-
-                
-                if(gamepad1.circle & !circlePressed & limit1 < 1){
-                    circlePressed = true;
-                    limit1 += 0.1;
-                }
-                else if(!gamepad1.circle & circlePressed){
-                    circlePressed = false;
-                }
-
-                
-                if(gamepad1.square & !squarePressed & limit1 > 0){
-                    squarePressed = true;
-                    limit1 -= 0.1;
-                }
-                else if(!gamepad1.square & squarePressed){
-                    squarePressed = false;
-                }
-                telemetry.addData("Balu limit", limit1);
-
-
-                
-                if(gamepad1.triangle & !trianglePressed & limit0 > 1){
-                    trianglePressed = true;
-                    limit0 += 0.1;
-                }
-                else if(!gamepad1.triangle & trianglePressed){
-                    trianglePressed = false;
-                }
-
-                
-                if(gamepad1.x & !xPressed & limit0 < 0){
-                    xPressed = true;
-                    limit0 -= 0.1;
-                }
-                else if(!gamepad1.x & xPressed){
-                    xPressed = false;
-                }
-                telemetry.addData("Etele limit", limit0);
 
                 // gas pedal
                 if (gamepad1.right_trigger > 0.1) {
@@ -115,28 +75,27 @@ public class LinearMotionTest extends LinearOpMode {
                 }
 
                 // square
-                EleftY = Math.pow(leftY, 3) * Math.signum(leftY)*limit;
-                EleftX = Math.pow(leftX, 3) * Math.signum(leftX)*limit;
-//                ErightY = Math.pow(rightY, 2) * Math.signum(rightY) * 0.4;
-                ErightX = Math.pow(rightX, 3) * Math.signum(rightX)*limit;
+                EleftY = Math.pow(leftY, 2) * Math.signum(leftY) * limit;
+                EleftX = Math.pow(leftX, 2) * Math.signum(leftX) * limit;
+                ErightY = Math.pow(rightY, 2) * Math.signum(rightY) * 0.4;
+                ErightX = Math.pow(rightX, 2) * Math.signum(rightX) * 0.4;
 
-                if (ErightX > 0.3) {
+                if (ErightX != 0) {
                     drive0.setPower(ErightX);
                     drive1.setPower(ErightX);
                     drive2.setPower(ErightX);
                     drive3.setPower(ErightX);
-                } else if (EleftX == 0 && EleftY == 0) {
+                } else if (EleftXd == 0 && EleftYd == 0) {
                     drive0.setPower(0);
                     drive1.setPower(0);
                     drive2.setPower(0);
                     drive3.setPower(0);
                 } else {
-                    drive1.setPower((EleftX + EleftY) * -1);
-                    drive2.setPower((EleftX + EleftY));
-                    drive0.setPower((EleftX - EleftY));
-                    drive3.setPower((EleftX - EleftY) * -1);
+                    drive2.setPower(sqrt2over2 * (EleftXd + EleftYd));
+                    drive1.setPower(sqrt2over2 * (EleftXd + EleftYd) * -1);
+                    drive0.setPower(sqrt2over2 * (EleftXd - EleftYd));
+                    drive3.setPower(sqrt2over2 * (EleftXd - EleftYd) * -1);
                 }
-
                 // ====== LINEAR MOTION CONTROL =====
 
                 // control of Balu's linear motion motor
