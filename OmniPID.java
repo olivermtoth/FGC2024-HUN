@@ -1,10 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+@TeleOp(name = "OnmiDrive PID")
 public class OmniPID extends LinearOpMode {
 
     // Declare motor and IMU objects
@@ -12,26 +15,34 @@ public class OmniPID extends LinearOpMode {
     private IMU imu;
     
     // PID control variables
-    private double kP = 0.01, kI = 0.0, kD = 0.0; // Adjust these values based on tuning
-    private double integral = 0, lastError = 0;
+    private double kP = 0.2, kI = 0.0, kD = 0.1; // Adjust these values based on tuning
+    private double integral = 0, lastError = 0, targetHeading;
     private ElapsedTime timer = new ElapsedTime();
+    private final double PI = 3.141592653589793;
 
     @Override
     public void runOpMode() {
         // Initialize motors and IMU
-        frontLeftMotor = hardwareMap.get(DcMotor.class, "frontLeftMotor");
-        frontRightMotor = hardwareMap.get(DcMotor.class, "frontRightMotor");
-        backLeftMotor = hardwareMap.get(DcMotor.class, "backLeftMotor");
-        backRightMotor = hardwareMap.get(DcMotor.class, "backRightMotor");
+        frontLeftMotor = hardwareMap.get(DcMotor.class, "drive1");
+        frontRightMotor = hardwareMap.get(DcMotor.class, "drive0");
+        backLeftMotor = hardwareMap.get(DcMotor.class, "drive3");
+        backRightMotor = hardwareMap.get(DcMotor.class, "drive2");
 
         imu = hardwareMap.get(IMU.class, "imu");
 
         // Set motors' direction so that they spin correctly
-        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-
+        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        
+        
         // Reset IMU
         imu.resetYaw();
+        targetHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         // Wait for the start button
         waitForStart();
@@ -43,10 +54,8 @@ public class OmniPID extends LinearOpMode {
             double rotate = gamepad1.right_stick_x;   // Rotation
 
             // Get current heading (yaw) from IMU
-            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-            // Target heading is based on user input (rotate value)
-            double targetHeading = rotate * 30; // scale rotation by factor (optional)
 
             // Compute PID correction for heading control
             double correction = pidController(targetHeading, currentHeading);
@@ -76,6 +85,7 @@ public class OmniPID extends LinearOpMode {
             backRightMotor.setPower(brPower);
 
             // Display telemetry
+            telemetry.addData("Time", timer.seconds());
             telemetry.addData("Heading", currentHeading);
             telemetry.addData("Target Heading", targetHeading);
             telemetry.addData("Correction", correction);
@@ -85,11 +95,21 @@ public class OmniPID extends LinearOpMode {
 
     // PID controller for heading correction
     private double pidController(double targetHeading, double currentHeading) {
-        double error = targetHeading - currentHeading;
+        double error = angleWrap(targetHeading - currentHeading);
         integral += error * timer.seconds();
         double derivative = (error - lastError) / timer.seconds();
         lastError = error;
         timer.reset();
         return kP * error + kI * integral + kD * derivative;
+    }
+    
+     public double angleWrap(double degrees){
+        while(degrees > PI){
+            degrees -= 2*PI;
+        }
+        while(degrees < -PI){
+            degrees += 2*PI;
+        }
+        return degrees;
     }
 }
